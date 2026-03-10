@@ -518,16 +518,18 @@ end
 -- ══════════════════════════════════════════════
 RunService.Heartbeat:Connect(function()
     if not S.godMode then return end
-    grabChar()
-    if hum and hum.Health < hum.MaxHealth then hum.Health = hum.MaxHealth end
-    if char then
-        for _, v in pairs(char:GetDescendants()) do
-            if (v:IsA("NumberValue") or v:IsA("IntValue")) then
-                local n = v.Name:lower()
-                if n:find("recov") then v.Value = 100 end
+    pcall(function()
+        grabChar()
+        if hum and hum.Health < hum.MaxHealth then hum.Health = hum.MaxHealth end
+        if char then
+            for _, v in pairs(char:GetDescendants()) do
+                if (v:IsA("NumberValue") or v:IsA("IntValue")) then
+                    local n = v.Name:lower()
+                    if n:find("recov") then v.Value = 100 end
+                end
             end
         end
-    end
+    end)
 end)
 
 -- ══════════════════════════════════════════════
@@ -872,7 +874,7 @@ local function rebuildLockList()
     end
 end
 rebuildLockList()
-RunService.Heartbeat:Connect(function() if S.lockTarget then lockStatus.Text="🎯 Locked: "..S.lockTarget.Name lockStatus.TextColor3=PNK end end)
+RunService.Heartbeat:Connect(function() pcall(function() if S.lockTarget then lockStatus.Text="🎯 Locked: "..S.lockTarget.Name lockStatus.TextColor3=PNK end end) end)
 BT(lp,"🔄 Refresh",BG3,UDim2.new(1,0,0,30),4).MouseButton1Click:Connect(rebuildLockList)
 BT(lp,"🔓 Clear Lock",RED,UDim2.new(1,0,0,30),5).MouseButton1Click:Connect(function() setLockTarget(nil) lockStatus.Text="🔓  No Target" lockStatus.TextColor3=DIM rebuildLockList() end)
 
@@ -939,9 +941,11 @@ local koCountLbl=LB(myCard,"💀 KOs: 0",UDim2.new(1,0,0,14),TXT,11,Enum.TextXAl
 local sessionLbl=LB(myCard,"⏱ 0:00",UDim2.new(1,0,0,14),DIM,10,Enum.TextXAlignment.Center)
 local sessionStart=tick()
 RunService.Heartbeat:Connect(function()
-    koCountLbl.Text="💀 KOs: "..S.koCount
-    local e=tick()-sessionStart local m=math.floor(e/60) local s=math.floor(e%60)
-    sessionLbl.Text=string.format("⏱ %d:%02d",m,s)
+    pcall(function()
+        koCountLbl.Text="💀 KOs: "..S.koCount
+        local e=tick()-sessionStart local m=math.floor(e/60) local s=math.floor(e%60)
+        sessionLbl.Text=string.format("⏱ %d:%02d",m,s)
+    end)
 end)
 HR(xp,7) SL(xp,"REMOTES INFO (for debug)",8)
 do
