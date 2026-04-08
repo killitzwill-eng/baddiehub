@@ -1,10 +1,9 @@
--- Baddies Script for Roblox with Xeno Integration
+-- Baddies Script for Roblox with Orion UI
 -- Created for Venice user
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 
 -- Player
@@ -13,9 +12,15 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local rootPart = character:WaitForChild("HumanoidRootPart")
 
--- Xeno Integration
-local Xeno = loadstring(game:HttpGet("https://raw.githubusercontent.com/xenohub/xeno/main/loader.lua"))()
-local ui = Xeno:CreateWindow("Baddies Script")
+-- Orion UI Library
+local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
+
+local Window = OrionLib:MakeWindow({
+    Name = "Baddies Script",
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "BaddiesConfig"
+})
 
 -- Variables
 local walkSpeed = 16
@@ -38,7 +43,10 @@ local noclipConnection = nil
 local flyConnection = nil
 local godModeConnection = nil
 
--- Functions
+-- =====================
+-- FUNCTIONS
+-- =====================
+
 function createESP(targetPlayer)
     if not targetPlayer or not targetPlayer.Character then return end
     local targetCharacter = targetPlayer.Character
@@ -116,8 +124,11 @@ function getClosestPlayerToCursor()
     local shortestDistance = math.huge
 
     for _, p in pairs(Players:GetPlayers()) do
-        if p ~= player and p.Character and p.Character:FindFirstChild("Humanoid")
-            and p.Character:FindFirstChild(aimbotPart) and p.Character.Humanoid.Health > 0 then
+        if p ~= player and p.Character
+            and p.Character:FindFirstChild("Humanoid")
+            and p.Character:FindFirstChild(aimbotPart)
+            and p.Character.Humanoid.Health > 0 then
+
             local pos, isVisible = workspace.CurrentCamera:WorldToScreenPoint(p.Character[aimbotPart].Position)
             if isVisible then
                 local mousePos = UserInputService:GetMouseLocation()
@@ -270,7 +281,10 @@ function autoFarm()
     end
 end
 
--- Player Added/Removed
+-- =====================
+-- PLAYER EVENTS
+-- =====================
+
 Players.PlayerAdded:Connect(function(newPlayer)
     if espEnabled then
         newPlayer.CharacterAdded:Connect(function()
@@ -285,7 +299,6 @@ Players.PlayerRemoving:Connect(function(removedPlayer)
     removeESP(removedPlayer)
 end)
 
--- Respawn handling
 player.CharacterAdded:Connect(function(newChar)
     character = newChar
     humanoid = newChar:WaitForChild("Humanoid")
@@ -296,49 +309,159 @@ player.CharacterAdded:Connect(function(newChar)
     flyVelocity = Vector3.new(0, 0, 0)
 end)
 
--- UI Tabs
-local movementTab = ui:CreateTab("Movement")
-movementTab:CreateSlider("Walk Speed", 16, 200, walkSpeed, function(val)
-    walkSpeed = val
-    humanoid.WalkSpeed = val
-end)
-movementTab:CreateSlider("Jump Power", 50, 300, jumpPower, function(val)
-    jumpPower = val
-    humanoid.JumpPower = val
-end)
-movementTab:CreateSlider("Fly Speed", 10, 200, flySpeed, function(val)
-    flySpeed = val
-end)
-movementTab:CreateToggle("Noclip", false, function()
-    toggleNoclip()
-end)
-movementTab:CreateToggle("Fly", false, function()
-    toggleFly()
-end)
+-- =====================
+-- ORION UI TABS
+-- =====================
 
-local combatTab = ui:CreateTab("Combat")
-combatTab:CreateToggle("ESP", false, function()
-    toggleESP()
-end)
-combatTab:CreateToggle("Aimbot", false, function(state)
-    aimbotEnabled = state
-end)
-combatTab:CreateSlider("Aimbot Smoothness", 0.01, 1, aimbotSmoothness, function(val)
-    aimbotSmoothness = val
-end)
+-- Movement Tab
+local MovementTab = Window:MakeTab({
+    Name = "Movement",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
 
-local miscTab = ui:CreateTab("Misc")
-miscTab:CreateToggle("God Mode", false, function()
-    toggleGodMode()
-end)
-miscTab:CreateToggle("Auto Farm", false, function(state)
-    autoFarmEnabled = state
-end)
+MovementTab:AddSlider({
+    Name = "Walk Speed",
+    Min = 16,
+    Max = 200,
+    Default = 16,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 1,
+    ValueName = "speed",
+    Callback = function(val)
+        walkSpeed = val
+        if humanoid then humanoid.WalkSpeed = val end
+    end
+})
 
--- Main loop
+MovementTab:AddSlider({
+    Name = "Jump Power",
+    Min = 50,
+    Max = 300,
+    Default = 50,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 1,
+    ValueName = "power",
+    Callback = function(val)
+        jumpPower = val
+        if humanoid then humanoid.JumpPower = val end
+    end
+})
+
+MovementTab:AddSlider({
+    Name = "Fly Speed",
+    Min = 10,
+    Max = 200,
+    Default = 50,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 1,
+    ValueName = "speed",
+    Callback = function(val)
+        flySpeed = val
+    end
+})
+
+MovementTab:AddToggle({
+    Name = "Noclip",
+    Default = false,
+    Callback = function(state)
+        if state ~= noclipEnabled then
+            toggleNoclip()
+        end
+    end
+})
+
+MovementTab:AddToggle({
+    Name = "Fly",
+    Default = false,
+    Callback = function(state)
+        if state ~= flyEnabled then
+            toggleFly()
+        end
+    end
+})
+
+-- Combat Tab
+local CombatTab = Window:MakeTab({
+    Name = "Combat",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+CombatTab:AddToggle({
+    Name = "ESP",
+    Default = false,
+    Callback = function(state)
+        if state ~= espEnabled then
+            toggleESP()
+        end
+    end
+})
+
+CombatTab:AddToggle({
+    Name = "Aimbot",
+    Default = false,
+    Callback = function(state)
+        aimbotEnabled = state
+    end
+})
+
+CombatTab:AddSlider({
+    Name = "Aimbot Smoothness",
+    Min = 1,
+    Max = 100,
+    Default = 20,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 1,
+    ValueName = "%",
+    Callback = function(val)
+        aimbotSmoothness = val / 100
+    end
+})
+
+CombatTab:AddDropdown({
+    Name = "Aimbot Target Part",
+    Default = "Head",
+    Options = {"Head", "HumanoidRootPart", "Torso"},
+    Callback = function(val)
+        aimbotPart = val
+    end
+})
+
+-- Misc Tab
+local MiscTab = Window:MakeTab({
+    Name = "Misc",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+MiscTab:AddToggle({
+    Name = "God Mode",
+    Default = false,
+    Callback = function(state)
+        if state ~= godModeEnabled then
+            toggleGodMode()
+        end
+    end
+})
+
+MiscTab:AddToggle({
+    Name = "Auto Farm",
+    Default = false,
+    Callback = function(state)
+        autoFarmEnabled = state
+    end
+})
+
+-- =====================
+-- MAIN LOOP
+-- =====================
+
 RunService.Heartbeat:Connect(function()
     aimbotLoop()
     if autoFarmEnabled then
         autoFarm()
     end
 end)
+
+OrionLib:Init()
